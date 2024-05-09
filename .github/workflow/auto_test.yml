@@ -1,0 +1,166 @@
+name: auto_test_ci
+#定义触发条件，在push，pr时会主动触发，同时每4个小时定时触发
+on: 
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */4 * * *"
+  
+# 定义全局环境变量
+env:
+  qemu-version: 7.1.0
+  rust-toolchain: nightly
+
+
+jobs:
+  ci_test:
+    name: Linux Application Image Test
+    runs-on: ubuntu-22.04 # 选定github aciton启动的os环境
+    strategy:
+      fail-fast: false
+      matrix:
+        # arch: [x86_64, riscv64, aarch64]
+        arch: [riscv64,x86_64] # 使用matrix矩阵，同时执行两个不同的架构ci测试
+    env:
+        ARCH: ${{matrix.arch}}
+        # or ext4
+        FS: fat32
+    steps:
+      - uses: actions/checkout@v4 # 检出本地代码
+
+
+      - name: Add current date into a variable # 将时间传递给github action中的环境变量
+        run: |
+            COMMIT_TIME=$(date -d '+8 hour')
+            echo "COMMIT_TIME=$COMMIT_TIME" >> $GITHUB_ENV
+
+      - name: config.py key_value set # 使用github aciton中的环境变量对pytest下的config.py文件中的配置进行替换
+        shell: sh
+        run: |
+              cd pytest
+              sed -i "s#\"测试架构\": .*#\"测试架构\": \"$my_ARCH\",#" config.py
+              sed -i "s#\"文件系统\": .*#\"文件系统\": \"$my_FS\",#" config.py
+              sed -i "s#\"提交者\": .*#\"提交者\": \"$my_GITHUB_ACTOR\",#" config.py
+              sed -i "s#\"提交ID\": .*#\"提交ID\": \"$my_GITHUB_SHA\",#" config.py
+              sed -i "s#\"提交时间\": .*#\"提交时间\": \"$my_COMMIT_TIME\",#" config.py
+              sed -i "s#\"仓库名\": .*#\"仓库名\": \"$my_GITHUB_REPOSITORY\",#" config.py
+              sed -i "s#\"分支名\": .*#\"分支名\": \"$my_GITHUB_REF_NAME\",#" config.py
+              sed -i "s#\"工作目录\": .*#\"工作目录\": \"$my_GITHUB_WORKSPACE\"#" config.py
+
+        env:
+          my_ARCH: ${{ env.ARCH }}
+          my_FS: ${{ env.FS }}
+          my_GITHUB_ACTOR: ${{ github.actor }}
+          my_GITHUB_SHA: ${{ github.sha }}
+          my_COMMIT_TIME: ${{ env.COMMIT_TIME }}
+          my_GITHUB_REPOSITORY: ${{ github.repository }}
+          my_GITHUB_REF_NAME: ${{ github.ref_name }}
+          my_GITHUB_WORKSPACE: ${{ github.workspace }}
+
+          
+
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal                           # 使用 minimal 配置文件，这通常是一个轻量级的配置文件，可能只包含项目的基本信息。
+          toolchain: ${{ env.rust-toolchain }}       # 表示使用环境变量 rust_toolchain 中指定的 Rust 工具链版本。 
+          components: rust-src, llvm-tools-preview, rustfmt, clippy
+
+      - name: install cargo-binutils
+        run: cargo install cargo-binutils --force
+
+
+
+      - name: Cache QEMU
+        id: cache-qemu
+        uses: actions/cache@v4
+        if: always()
+        with:
+          path: qemu-${{ env.qemu-version }}
+          key: qemu-${{ env.qemu-version }}
+          save-always: true
+
+      - name: Install ninja-build
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+
+      - name: Download and Compile QEMU
+        if: steps.cache-qemu.outputs.cache-hit != 'true'
+        run: sudo chmod +x .github/scripts/make-qemu.sh && .github/scripts/make-qemu.sh ${{ env.qemu-version }}
+
+      - name: Install QEMU
+        run: |
+          cd qemu-${{ env.qemu-version }} && sudo make install
+          qemu-system-${{ matrix.arch }} --version
+
+          
+      - if: matrix.arch == 'riscv64' # riscv64额外环境
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-binutils
+          version: latest
+
+      - name: Install dependence   # 安装pytest所需的依赖库、allure以及交叉编译环境
+        run: |
+          sudo apt install openjdk-17-jdk
+          sudo apt install nodejs
+          wget https://registry.npmjs.org/allure-commandline/-/allure-commandline-2.24.1.tgz
+          sudo mkdir allure-com
+          sudo tar zxvf allure-commandline-2.24.1.tgz -C allure-com
+          ls -lh
+          sudo ln -s ${{github.workspace}}/allure-com/package/bin/allure /usr/bin/allure
+          wget https://musl.cc/aarch64-linux-musl-cross.tgz
+          wget https://musl.cc/riscv64-linux-musl-cross.tgz
+          wget https://musl.cc/x86_64-linux-musl-cross.tgz
+          tar zxf aarch64-linux-musl-cross.tgz
+          tar zxf riscv64-linux-musl-cross.tgz
+          tar zxf x86_64-linux-musl-cross.tgz
+
+
+      
+      - name: install pytest  # 根据requirements中的依赖安装pytest
+        run: |
+          chmod -R 777 pytest/
+          cd pytest
+          sudo pip3 install -r ./requirements.txt -i http://mirrors.aliyun.com/pypi/simple --trusted-host mirrors.aliyun.com
+      - name: os_test # 使用pytest框架进行测试
+        run: |
+          cd pytest
+          sudo python3 -m pytest -sv --alluredir report/result testcase/test_arceos.py --clean-alluredir
+
+
+      - name: deal parrale  # 两个架构的报告从同一个分支获得，避免同时pull后push的冲突
+        if: always()
+        run: if [ "${{matrix.arch}}" = "riscv64" ]; then sleep 240; fi     
+        
+      - name: load allure history # pull报告所在分支的数据
+        uses: actions/checkout@v3
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages_ci
+          path: gh-pages_ci
+      
+      - name: build report # 本地生成报告
+        uses: simple-elf/allure-report-action@v1.7
+        if: always()
+        with:
+          keep_reports: 1000
+          gh_pages: gh-pages_ci
+          allure_history: allure-history
+          allure_results: ${{github.workspace}}/pytest/report/result
+          subfolder: ${{matrix.arch}}
+      
+
+
+      - name: Publish report # 发布报告
+        uses: peaceiris/actions-gh-pages@v3
+        if: always()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages_ci
+          publish_dir: allure-history
