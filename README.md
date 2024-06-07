@@ -1,4 +1,5 @@
 ######  CICV Jenkins CI Dockerfile Content ######
+```
 # 基于现有的 Jenkins 镜像
 FROM henshing/jenkins_saved:v3
 
@@ -19,9 +20,10 @@ USER jenkins
 
 # 设置启动命令
 ENTRYPOINT ["/usr/local/bin/jenkins.sh"]
-
+```
 
 ###### CICV Jenkins Docker cmds ######
+```
 # [image build]
 sudo docker build -t cicv/cicv_jenkins:v1 .
 #Notes: 在Dockerfile所在目录执行
@@ -29,7 +31,7 @@ sudo docker build -t cicv/cicv_jenkins:v1 .
 # [container start]
 sudo docker run -d --privileged -u root --name cicv_jenkins -p 9095:8080 -p 60000:50000 -v /home/jenkins_home:/home/jenkins_home -v /etc/localtime:/etc/localtime cicv/cicv_jenkins:v1
 #Notes:  映射端口号9095和60000根据实际环境进行配置
-
+```
 
 
 ###### v1.0仓库位置 ######
