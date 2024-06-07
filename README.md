@@ -1,4 +1,37 @@
-# v1.0仓库位置
+######  CICV Jenkins CI Dockerfile Content ######
+# 基于现有的 Jenkins 镜像
+FROM henshing/jenkins_saved:v3
+
+# 切换到 root 用户
+USER root
+
+# 生成自定义启动脚本
+RUN printf '#!/bin/bash\n# 启动 Jenkins\nexec java -DJENKINS_HOME=/home/jenkins_home -jar /usr/share/jenkins/jenkins.war' > jenkins.sh
+
+# 将自定义的启动脚本复制到容器内
+COPY jenkins.sh /usr/local/bin/jenkins.sh
+
+# 确保启动脚本具有执行权限
+RUN chmod +x /usr/local/bin/jenkins.sh
+
+# 切换回 Jenkins 用户
+USER jenkins
+
+# 设置启动命令
+ENTRYPOINT ["/usr/local/bin/jenkins.sh"]
+
+###### CICV Jenkins Docker cmds ######
+# [image build]
+sudo docker build -t cicv/cicv_jenkins:v1 .
+#Notes: 在Dockerfile所在目录执行
+
+# [container start]
+sudo docker run -d --privileged -u root --name cicv_jenkins -p 9095:8080 -p 60000:50000 -v /home/jenkins_home:/home/jenkins_home -v /etc/localtime:/etc/localtime cicv/cicv_jenkins:v1
+#Notes:  映射端口号9095和60000根据实际环境进行配置
+
+
+
+###### v1.0仓库位置 ######
 https://github.com/buhenxihuan/Starry
 
 
