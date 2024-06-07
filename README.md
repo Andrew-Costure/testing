@@ -6,19 +6,20 @@ FROM henshing/jenkins_saved:v3
 USER root
 
 # 生成自定义启动脚本
-RUN printf '#!/bin/bash\n# 启动 Jenkins\nexec java -DJENKINS_HOME=/home/jenkins_home -jar /usr/share/jenkins/jenkins.war' > jenkins.sh
-
-# 将自定义的启动脚本复制到容器内
-COPY jenkins.sh /usr/local/bin/jenkins.sh
+RUN printf '#!/bin/bash\n# 启动 Jenkins\nexec java -jar -DJENKINS_HOME=/home/jenkins_home /usr/share/jenkins/jenkins.war' > /usr/local/bin/jenkins.sh
 
 # 确保启动脚本具有执行权限
 RUN chmod +x /usr/local/bin/jenkins.sh
+
+# 打印启动脚本内容
+RUN cat /usr/local/bin/jenkins.sh
 
 # 切换回 Jenkins 用户
 USER jenkins
 
 # 设置启动命令
 ENTRYPOINT ["/usr/local/bin/jenkins.sh"]
+
 
 ###### CICV Jenkins Docker cmds ######
 # [image build]
