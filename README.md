@@ -1,4 +1,4 @@
-# Github码仓接入JenkinsCI配置流程：
+# Github码仓接入JenkinsCI配置流程
 ```
 1. Github码仓新增Jenkinsfile文件，内容格式参考：
 	<> https://github.com/kraigyang/driver_display/blob/main/Jenkinsfile
