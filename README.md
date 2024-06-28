@@ -1,4 +1,4 @@
-######  CICV Jenkins CI Dockerfile Content ######
+# JenkinsCI容器Dockerfile
 ```
 # 基于现有的 Jenkins 镜像
 FROM henshing/jenkins_saved:v3
@@ -22,7 +22,7 @@ USER jenkins
 ENTRYPOINT ["/usr/local/bin/jenkins.sh"]
 ```
 
-###### CICV Jenkins Docker cmds ######
+# JenkinsCI容器启动流程
 ```
 # [image build]
 sudo docker build -t cicv/cicv_jenkins:v1 .
@@ -34,7 +34,7 @@ sudo docker run -d --privileged -u root --name cicv_jenkins -p 9095:8080 -p 6000
 ```
 
 
-###### v1.0仓库位置 ######
+# v1.0仓库位置
 https://github.com/buhenxihuan/Starry
 
 
