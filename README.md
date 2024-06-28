@@ -1,7 +1,7 @@
 # Github码仓接入JenkinsCI配置流程
 ```
 1. Github码仓新增Jenkinsfile文件，内容格式参考：
-     <> https://github.com/kraigyang/driver_display/blob/main/Jenkinsfile  (Notes: environment环境变量根据实际情况做修改)
+     <> https://github.com/kraigyang/driver_display/blob/main/Jenkinsfile   (Notes: environment环境变量根据实际情况做修改)
 
 2. Github端配置（Web页面：https://github.com/kern-crates/${repo}）：
      <> Repo Left Settings -> Webhooks -> Payload URL:http://49.51.192.19:9095/github-webhook/ -> Send me everything -> 保存
@@ -39,12 +39,10 @@ ENTRYPOINT ["/usr/local/bin/jenkins.sh"]
 # JenkinsCI容器启动流程
 ```
 # [image build]
-sudo docker build -t cicv/cicv_jenkins:v1 .
-#Notes: 在Dockerfile所在目录执行
+sudo docker build -t cicv/cicv_jenkins:v1 .    (Notes: 在Dockerfile所在目录执行)
 
 # [container start]
-sudo docker run -d --privileged -u root --name cicv_jenkins -p 9095:8080 -p 60000:50000 -v /home/jenkins_home:/home/jenkins_home -v /etc/localtime:/etc/localtime cicv/cicv_jenkins:v1
-#Notes:  映射端口号9095和60000根据实际环境进行配置
+sudo docker run -d --privileged -u root --name cicv_jenkins -p 9095:8080 -p 60000:50000 -v /home/jenkins_home:/home/jenkins_home -v /etc/localtime:/etc/localtime cicv/cicv_jenkins:v1     (Notes:  映射端口号9095和60000根据实际环境进行配置)
 ```
 
 
