@@ -8,7 +8,7 @@
 
 3. Github端配置（Web页面：https://github.com/kern-crates/${repo}）：
      <> Repo Left Settings -> Webhooks -> Payload URL:http://49.51.192.19:9095/github-webhook/ -> Send me everything -> 保存
-     <> Repo Right Settings -> Developer Settings -> Personal access tokens -> Tokens(classic) -> Generate -> 保存
+     <> Repo Right Settings -> Developer Settings -> Personal access tokens -> Tokens(classic) -> Generate （勾选repo与admin:repo_hook选项）-> 保存
 
 4. Jenkins端配置（Web页面：http://49.51.192.19:9095）：
      <> Dashboard -> 系统管理 -> 凭据 -> 系统 -> 全局凭据 (unrestricted) -> Secret Text -> 填入上步中Generate的Token -> ID命名为"GithubAccessToken"（示例） -> 保存
