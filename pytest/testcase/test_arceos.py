@@ -1,5 +1,3 @@
-
-
 #!/usr/bin/python3
 # -*- coding:utf-8 -*-
 import pytest
@@ -32,16 +30,9 @@ def step_setup01():  # 步骤函数命名不能以test_开头，否则将被识�
     logging.info("测试后置步骤：打印日志")
 
 
-@allure.step("测试步骤一：执行 代码扫描 测试")
+@allure.step("测试步骤一：执行 代码扫描测试")
 def step_01_clip(cmdRun, cmdApp):
-    _cmd = 'export PATH=$PATH:/home/runner/.cargo/bin:%s/riscv64-linux-musl-cross/bin:%s/x86_64-linux-musl-cross/bin:%s/aarch64-linux-musl-cross/bin && \
-            cd %s && make A=apps/monolithic_userboot ARCH=%s %s' %(commitConfig.get("工作目录"), \
-                                                 commitConfig.get("工作目录"), \
-                                                 commitConfig.get("工作目录"), \
-                                                 commitConfig.get("工作目录"), \
-                                                 commitConfig.get("测试架构"),\
-                                                 cmdApp
-                                                    )
+    _cmd = 'cd $pywork && cd .. && cargo clippy'
     logging.info("test_type=clippy")
     logging.info("test_cmd=" + _cmd)
     retcode, res = cmdRun.run_cmd(_cmd)
@@ -49,37 +40,59 @@ def step_01_clip(cmdRun, cmdApp):
     flag, msg = validator.validator().check(retcode, res)
     allure.dynamic.description("码仓提交信息===>%s\n" %json.dumps(commitConfig, indent=0, ensure_ascii=False)
                              + "用例结果信息===>%s\n" %msg)
+    allure.dynamic.title("测试 仓库" + os.environ["repo"] + " 代码扫描 基本功能")
     logging.info("用例结果信息--->" + msg)
     assert flag, msg
 
 
-# @allure.step("测试步骤一：执行 微内核 测试")
-# def step_01_uni(cmdRun, cmdApp):
-#     _cmd = 'cd %s && make A=%s ARCH=%s run' %(commitConfig.get("工作目录"), \
-#                                               cmdApp, \
-#                                               commitConfig.get("测试架构"))
-#     logging.info("test_type=unikernel")
-#     logging.info("test_cmd=" + _cmd)
-#     retcode, res = cmdRun.run_cmd(_cmd)
-#     logging.info("res=" + res)
-#     flag, msg = validator.validator().check(retcode, res)
-#     allure.dynamic.description("码仓提交信息===>%s\n" %json.dumps(commitConfig, indent=0, ensure_ascii=False)
-#                              + "用例结果信息===>%s\n" %msg)
-#     logging.info("用例结果信息--->" + msg)
-#     assert flag, msg
+@allure.step("测试步骤一：执行 单元测试")
+def step_01_cargo(cmdRun, cmdApp):
+    _cmd = 'cd $pywork && cd .. && cargo test '
+    logging.info("test_type=cargo_test")
+    logging.info("test_cmd=" + _cmd)
+    retcode, res = cmdRun.run_cmd(_cmd)
+    logging.info("res=" + res)
+    flag, msg = validator.validator().check(retcode, res)
+    allure.dynamic.description("码仓提交信息===>%s\n" %json.dumps(commitConfig, indent=0, ensure_ascii=False)
+                             + "用例结果信息===>%s\n" %msg)
+    allure.dynamic.title("测试 仓库" + os.environ["repo"] + " 单元测试 基本功能")
+    logging.info("用例结果信息--->" + msg)
+    assert flag, msg
 
 
-@allure.step("测试步骤一：执行 宏内核 测试")
-def step_01_mono(cmdRun, cmdTc):
-    _cmd = 'export PATH=$PATH:/home/xh/qemu-7.0.0/build:/home/runner/.cargo/bin:%s/riscv64-linux-musl-cross/bin:%s/aarch64-linux-musl-cross/bin:%s/x86_64-linux-musl-cross/bin && \
-             cd %s && ./build_img.sh %s %s && sudo fuser -k 5555/tcp 5555/udp; make A=apps/monolithic_userboot ARCH=%s TC=%s APP_FEATURES=batch run' %(commitConfig.get("工作目录"), \
-                                                                                      commitConfig.get("工作目录"), \
-                                                                                      commitConfig.get("工作目录"), \
-                                                                                      commitConfig.get("工作目录"), \
-                                                                                      commitConfig.get("测试架构"), \
-                                                                                      commitConfig.get("文件系统"), \
-                                                                                      commitConfig.get("测试架构"), \
-                                                                                      cmdTc)
+@allure.step("测试步骤一：执行 代码覆盖率测试")
+def step_01_tarpaulin(cmdRun, cmdApp):
+    _cmd = 'cd $pywork && cd .. && cargo tarpaulin --ignore-tests'
+    logging.info("test_type=tarpaulin")
+    logging.info("test_cmd=" + _cmd)
+    retcode, res = cmdRun.run_cmd(_cmd)
+    logging.info("res=" + res)
+    flag, msg = validator.validator().check(retcode, res)
+    allure.dynamic.description("码仓提交信息===>%s\n" %json.dumps(commitConfig, indent=0, ensure_ascii=False)
+                            + "用例结果信息===>%s\n" %msg)
+    allure.dynamic.title("测试 仓库" + os.environ["repo"] + " 代码覆盖率 基本功能")
+    logging.info("用例结果信息--->" + msg)
+    assert flag, msg
+
+
+@allure.step("测试步骤一：执行 微内核 测试")
+def step_01_uni(cmdRun, cmdTc, archTc):
+    _cmd = 'cd $pywork && make A=%s ARCH=%s' %(cmdTc, archTc)
+    logging.info("test_type=unikernel")
+    logging.info("test_cmd=" + _cmd)
+    retcode, res = cmdRun.run_cmd(_cmd)
+    logging.info("res=" + res)
+    flag, msg = validator.validator().check(retcode, res)
+    allure.dynamic.description("码仓提交信息===>%s\n" %json.dumps(commitConfig, indent=0, ensure_ascii=False)
+                             + "用例结果信息===>%s\n" %msg)
+    allure.dynamic.title("测试 仓库" + os.environ["repo"] + " 微内核 基本功能")
+    logging.info("用例结果信息--->" + msg)
+    assert flag, msg
+
+
+@allure.step("测试步骤一：执行 宏内核测试")
+def step_01_mono(cmdRun, cmdTc, archTc):
+    _cmd = 'cd $pywork && make disk_img && make test_monolithic ARCH=%s' %archTc
     logging.info("test_type=monokernel")
     logging.info("test_cmd=" + _cmd)
     retcode, res = cmdRun.run_cmd(_cmd)
@@ -87,6 +100,7 @@ def step_01_mono(cmdRun, cmdTc):
     flag, msg = validator.validator().check(retcode, res)
     allure.dynamic.description("码仓提交信息===>%s\n" %json.dumps(commitConfig, indent=0, ensure_ascii=False)
                              + "用例结果信息===>%s\n" %msg)
+    allure.dynamic.title("测试 仓库" + os.environ["repo"] + " 宏内核 基本功能")
     logging.info("用例结果信息--->" + msg)
     assert flag, msg
 
@@ -96,28 +110,14 @@ def step_01_mono(cmdRun, cmdTc):
 @allure.link(url="",name="用例对应需求的链接，若没有，可删除此行")
 @allure.story("故事（对应敏捷开发中的story)")
 @allure.severity('用例的级别，一般常用的级别为：blocker（阻塞缺陷），critical（严重缺陷），normal（一般缺陷），minor次要缺陷，trivial（轻微缺陷）')
-@allure.title("测试ArceOS 代码扫描 基本功能")
-@allure.description("测试用例简要描述")
-@pytest.mark.parametrize("clippyCmdList", clippyCmdList)
-@pytest.mark.repeat(1)
-def test_arceos_clippy(cmdRun, clippyCmdList):
+@allure.title("测试 宏内核 基本功能")
+@allure.description("测试用例简要描述: %s" %json.dumps(commitConfig, indent=0, ensure_ascii=False))
+@pytest.mark.mainrepo
+@pytest.mark.parametrize("monoTcList", monoTcList)
+@pytest.mark.parametrize("archTcList", archTcList)
+def test_arceos_monokernel(cmdRun, monoTcList, archTcList):
     """测试内核实时性指标"""
-    kpi = step_01_clip(cmdRun, clippyCmdList)
-
-
-# @pytest.mark.skip('暂不测试微内核')
-# @allure.feature("特性（对应敏捷开发中的feature）")
-# @allure.issue(url="",name="用例对应issuer的链接，若没有可删除此行")
-# @allure.link(url="",name="用例对应需求的链接，若没有，可删除此行")
-# @allure.story("故事（对应敏捷开发中的story)")
-# @allure.severity('用例的级别，一般常用的级别为：blocker（阻塞缺陷），critical（严重缺陷），normal（一般缺陷），minor次要缺陷，trivial（轻微缺陷）')
-# @allure.title("测试ArceOS 微内核 基本功能")
-# @allure.description("测试用例简要描述")
-# @pytest.mark.parametrize("uniCmdList", uniCmdList)
-# @pytest.mark.repeat(1)
-# def test_arceos_unikernel(cmdRun, uniCmdList):
-#     """测试内核实时性指标"""
-#     kpi = step_01_uni(cmdRun, uniCmdList)
+    kpi = step_01_mono(cmdRun, monoTcList, archTcList)
 
 
 @allure.feature("特性（对应敏捷开发中的feature）")
@@ -125,13 +125,60 @@ def test_arceos_clippy(cmdRun, clippyCmdList):
 @allure.link(url="",name="用例对应需求的链接，若没有，可删除此行")
 @allure.story("故事（对应敏捷开发中的story)")
 @allure.severity('用例的级别，一般常用的级别为：blocker（阻塞缺陷），critical（严重缺陷），normal（一般缺陷），minor次要缺陷，trivial（轻微缺陷）')
-@allure.title("测试ArceOS 宏内核 基本功能")
-@allure.description("测试用例简要描述: %s" %json.dumps(commitConfig, indent=0, ensure_ascii=False))
-@pytest.mark.parametrize("monoTcList", monoTcList)
-@pytest.mark.repeat(1)
-def test_arceos_monokernel(cmdRun, monoTcList):
+@allure.title("测试 微内核 基本功能")
+@allure.description("测试用例简要描述")
+@pytest.mark.mainrepo
+@pytest.mark.parametrize("uniCmdList", uniCmdList)
+@pytest.mark.parametrize("archTcList", archTcList)
+def test_arceos_unikernel(cmdRun, uniCmdList, archTcList):
     """测试内核实时性指标"""
-    kpi = step_01_mono(cmdRun, monoTcList)
+    kpi = step_01_uni(cmdRun, uniCmdList, archTcList)
+
+
+@allure.feature("特性（对应敏捷开发中的feature）")
+@allure.issue(url="",name="用例对应issuer的链接，若没有可删除此行")
+@allure.link(url="",name="用例对应需求的链接，若没有，可删除此行")
+@allure.story("故事（对应敏捷开发中的story)")
+@allure.severity('用例的级别，一般常用的级别为：blocker（阻塞缺陷），critical（严重缺陷），normal（一般缺陷），minor次要缺陷，trivial（轻微缺陷）')
+@allure.title("测试 代码扫描 基本功能")
+@allure.description("测试用例简要描述")
+@pytest.mark.mainrepo
+@pytest.mark.childrepo
+@pytest.mark.parametrize("clippyCmdList", clippyCmdList)
+def test_arceos_clippy(cmdRun, clippyCmdList):
+    """测试内核实时性指标"""
+    kpi = step_01_clip(cmdRun, clippyCmdList)
+
+
+@allure.feature("特性（对应敏捷开发中的feature）")
+@allure.issue(url="",name="用例对应issuer的链接，若没有可删除此行")
+@allure.link(url="",name="用例对应需求的链接，若没有，可删除此行")
+@allure.story("故事（对应敏捷开发中的story)")
+@allure.severity('用例的级别，一般常用的级别为：blocker（阻塞缺陷），critical（严重缺陷），normal（一般缺陷），minor次要缺陷，trivial（轻微缺陷）')
+@allure.title("测试 单元测试 基本功能")
+@allure.description("测试用例简要描述")
+@pytest.mark.mainrepo
+@pytest.mark.childrepo
+@pytest.mark.parametrize("cargoCmdList", cargoCmdList)
+def test_arceos_cargo(cmdRun, cargoCmdList):
+    """测试内核实时性指标"""
+    kpi = step_01_cargo(cmdRun, cargoCmdList)
+
+
+@allure.feature("特性（对应敏捷开发中的feature）")
+@allure.issue(url="",name="用例对应issuer的链接，若没有可删除此行")
+@allure.link(url="",name="用例对应需求的链接，若没有，可删除此行")
+@allure.story("故事（对应敏捷开发中的story)")
+@allure.severity('用例的级别，一般常用的级别为：blocker（阻塞缺陷），critical（严重缺陷），normal（一般缺陷），minor次要缺陷，trivial（轻微缺陷）')
+@allure.title("测试 代码覆盖率 基本功能")
+@allure.description("测试用例简要描述: %s" %json.dumps(commitConfig, indent=0, ensure_ascii=False))
+@pytest.mark.mainrepo
+@pytest.mark.childrepo
+@pytest.mark.parametrize("tarpaulinCmdList", tarpaulinCmdList)
+def test_arceos_tarpaulin(cmdRun, tarpaulinCmdList):
+    """测试内核实时性指标"""
+    kpi = step_01_tarpaulin(cmdRun, tarpaulinCmdList)
+
 
 if __name__ == '__main__':
     pytest.main(['-sv', '--alluredir', 'report/result', 'testcase/test_arceos.py', '--clean-alluredir'])
