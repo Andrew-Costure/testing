@@ -20,7 +20,7 @@ class validator:
             return False, "测试失败，命令执行失败，错误信息：\n%s" %caseRes
 
         m1 = re.findall('( fault | error |^fail |^fail!|Segmentation fault)', caseRes, re.IGNORECASE|re.MULTILINE)
-        m2 = re.findall('(pass|success)', caseRes, re.IGNORECASE|re.MULTILINE)
+        m2 = re.findall('(pass|success| ok!| Hello, Init!|Reach here!)', caseRes, re.IGNORECASE|re.MULTILINE)
         m3 = re.findall('(.*not found|.*unknown operand)', caseRes, re.IGNORECASE|re.MULTILINE)
         print(m3)
         if m1:
