@@ -1,10 +1,12 @@
 # Github码仓接入JenkinsCI配置流程
 ```
 1. Github码仓新增README.json文件，内容格式参考：
-     <> https://github.com/kraigyang/driver_display/blob/main/README.json   (Notes: "test_repos"字段是必选配置，其余为可选配置)
+     <> https://github.com/kraigyang/driver_display/blob/main/README.json
+     (Notes: "test_repos"字段是必选配置，其余为可选配置)
 
 2. Github码仓新增Jenkinsfile文件，内容格式参考：
-     <> https://github.com/kraigyang/driver_display/blob/main/Jenkinsfile   (Notes: environment环境变量根据实际情况做修改)
+     <> https://github.com/kraigyang/driver_display/blob/main/Jenkinsfile
+     (Notes: environment环境变量根据实际情况做修改)
 
 3. Github端配置（Web页面：https://github.com/kern-crates/${repo}）：
      <> Repo Left Settings -> Webhooks -> Payload URL:http://49.51.192.19:9095/github-webhook/ -> Send me everything -> 保存
@@ -13,6 +15,7 @@
 4. Jenkins端配置（Web页面：http://49.51.192.19:9095）：
      <> Dashboard -> 系统管理 -> 凭据 -> 系统 -> 全局凭据 (unrestricted) -> Secret Text -> 填入上步中Generate的Token -> ID命名为"GithubAccessToken"（示例） -> 保存
      <> Pipeline -> Configuration -> 构建触发器（Github hook trigger for GITScm polling）-> 流水线（Pipeline script from SCM） -> Add CI monitored repo1/credentials1 -> Add CI monitored repo2/credentials2  ...  -> Add CI monitored repoN/credentialsN -> 保存
+     (Notes: Repo URL中末尾的斜杠必须删掉)
 
 ```
 # JenkinsCI容器Dockerfile
